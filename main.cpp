@@ -5,8 +5,9 @@
 #include <stdio.h>
 #include <windows.h>
 #include<math.h>
-
 #include <iostream>
+
+#include "BmpLoader.h"
 
 using namespace std;
 
@@ -24,9 +25,34 @@ double rackheight = 3.0;
 int theta_x=0, theta_y=0, theta_z=0;
 GLfloat sx, cx;
 
-bool l0=0, l0a=1, l0s=1, l0d=1, l1=1, l1a=1, l1s=1, l1d=1;
+unsigned int ID;
+
+bool l0=1, l0a=1, l0s=1, l0d=1, l1=0, l1a=1, l1s=1, l1d=1;
 
 
+
+static GLfloat v_box[8][3] =
+{
+    {-0.5, -0.5, -0.5},
+    {0.5, -0.5, -0.5},
+    {-0.5, -0.5, 0.5},
+    {0.5, -0.5, 0.5},
+
+    {-0.5, 0.5, -0.5},
+    {0.5, 0.5, -0.5},
+    {-0.5, 0.5, 0.5},
+    {0.5, 0.5, 0.5}
+};
+
+static GLubyte quadIndices[6][4] =
+{
+    {0,2,3,1},
+    {0,2,6,4},
+    {2,3,7,6},
+    {1,3,7,5},
+    {1,5,4,0},
+    {6,7,5,4}
+};
 
 static GLfloat colors[][3] =
 {
@@ -53,7 +79,6 @@ static GLfloat colors[][3] =
     {1,1,1},// white-20
     {0.25,0.23,0.06},// light rope-21
     {0.04,0.04,0.01},// eye-22
-    //{0.9,0.9,0.88},// body-23
     {0.14,0.29,0.56},// body-23
     {0.93,0.64,0.08},// nose-24
     {0.15,0.1,0.01},// hand-25
@@ -192,6 +217,37 @@ void drawwall()
 
 }
 
+void frontwall()
+{
+
+
+    glPushMatrix();//front wall
+        glTranslatef(17.9,9.6,0.25);
+        glScalef(4.2,0.8,wallWidth);
+
+        glutSolidCube(1.0);
+    glPopMatrix();
+    glPushMatrix();//front wall
+        glTranslatef(19.1,8,0.25);
+        glScalef(1.7,2.5,wallWidth);
+
+        glutSolidCube(1.0);
+    glPopMatrix();
+
+    glPushMatrix();//front wall
+        glTranslatef(17.9,wallHeight/2-1.6,0.25);
+        glScalef(4.2,6.8,wallWidth);
+
+        glutSolidCube(1.0);
+    glPopMatrix();
+
+    glPushMatrix();//front wall
+        glTranslatef(wallLen/2-2.1,wallHeight/2,0.25);
+        glScalef(wallLen-4.2,wallHeight,wallWidth);
+
+        glutSolidCube(1.0);
+    glPopMatrix();
+}
 void drawboundary()
 {
     c = 0;
@@ -201,29 +257,103 @@ void drawboundary()
 
         drawwall();
 
-        glTranslatef(wallLen,0,0);
-        drawwall();
     glPopMatrix();
-
-    glPushMatrix();//front wall
-        c = 1;
-        glTranslatef(0,0,0.25);
-        glRotatef(90, 0,1,0);
-        drawwall();
-    glPopMatrix();
+    frontwall();
     c = 2;
     matprop(colors[c][0],colors[c][1],colors[c][2],   colors[c][0],colors[c][1],colors[c][2],    colors[c][0],colors[c][1],colors[c][2],    50);
-
+/*
     glPushMatrix();//floor wall
         c = 2;
         glTranslatef(wallLen/2,0.25,wallLen/2);
         glScalef(wallLen,wallWidth,wallLen);
 
         glutSolidCube(1.0);
-    glPopMatrix();
+    glPopMatrix();*/
 
 }
 
+static void getNormal3p
+(GLfloat x1, GLfloat y1,GLfloat z1, GLfloat x2, GLfloat y2,GLfloat z2, GLfloat x3, GLfloat y3,GLfloat z3)
+{
+    GLfloat Ux, Uy, Uz, Vx, Vy, Vz, Nx, Ny, Nz;
+
+    Ux = x2-x1;
+    Uy = y2-y1;
+    Uz = z2-z1;
+
+    Vx = x3-x1;
+    Vy = y3-y1;
+    Vz = z3-z1;
+
+    Nx = Uy*Vz - Uz*Vy;
+    Ny = Uz*Vx - Ux*Vz;
+    Nz = Ux*Vy - Uy*Vx;
+
+    glNormal3f(Nx,Ny,Nz);
+}
+
+void drawCube()
+{
+    matprop(1,1,1, 1,1,1, 1,1,1, 60);
+    glPushMatrix();
+    glBegin(GL_QUADS);
+    for (GLint i = 0; i <6; i++)
+    {
+        getNormal3p(v_box[quadIndices[i][0]][0], v_box[quadIndices[i][0]][1], v_box[quadIndices[i][0]][2],
+                    v_box[quadIndices[i][1]][0], v_box[quadIndices[i][1]][1], v_box[quadIndices[i][1]][2],
+                    v_box[quadIndices[i][2]][0], v_box[quadIndices[i][2]][1], v_box[quadIndices[i][2]][2]);
+
+        glVertex3fv(&v_box[quadIndices[i][0]][0]);glTexCoord2f(0,0);
+        glVertex3fv(&v_box[quadIndices[i][1]][0]);glTexCoord2f(1,0);
+        glVertex3fv(&v_box[quadIndices[i][2]][0]);glTexCoord2f(1,1);
+        glVertex3fv(&v_box[quadIndices[i][3]][0]);glTexCoord2f(0,1);
+    }
+    glEnd();
+    glPopMatrix();
+}
+void LoadTexture(const char*filename)
+{
+    glGenTextures(1, &ID);//generate
+    glBindTexture(GL_TEXTURE_2D, ID);// bind -image 2d/3d - image er id
+    glPixelStorei(GL_UNPACK_ALIGNMENT, ID); //store
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);//2d image - type of filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    BmpLoader bl(filename);
+
+    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, bl.iWidth, bl.iHeight, GL_RGB, GL_UNSIGNED_BYTE, bl.textureData );
+}
+void drawFloor()
+{
+
+    glEnable(GL_TEXTURE_2D);
+
+    LoadTexture("H:\\Drive H\\Code Blocks Programming\\OpenGL Programs\\CSE4208 Computer Graphics\\Lab Assignment\\kf.bmp");
+    glPushMatrix();
+    glTranslatef(wallLen/2,0.25,wallLen/2);
+    glScalef(wallLen,wallWidth,wallLen);
+    drawCube();
+    glPopMatrix();
+
+    glDeleteTextures(1, &ID);
+    glDisable(GL_TEXTURE_2D);
+}
+void drawRigntWall()
+{
+    glEnable(GL_TEXTURE_2D);
+
+    LoadTexture("H:\\Drive H\\Code Blocks Programming\\OpenGL Programs\\CSE4208 Computer Graphics\\Lab Assignment\\wallr.bmp");
+    glPushMatrix();
+    glTranslatef(wallLen,wallHeight/2,wallLen/2);
+    glRotatef(90, 0,0,1);
+    glScalef(wallHeight,wallWidth,wallLen);
+    drawCube();
+    glPopMatrix();
+
+    glDeleteTextures(1, &ID);
+    glDisable(GL_TEXTURE_2D);
+}
 
 void drawshelf()
 {
@@ -259,7 +389,7 @@ void drawboxes()
         matprop(colors[c][0],colors[c][1],colors[c][2],   colors[c][0],colors[c][1],colors[c][2],    colors[c][0],colors[c][1],colors[c][2],    50);
 
 
-        glTranslatef(1.5,1.4,wallLen/2);
+        glTranslatef(1.5,1.45,wallLen/2);
         glScalef(3-d, 2.8, wallLen-d);
 
         glutSolidCube(1.0);
@@ -271,7 +401,7 @@ void drawboxes()
         matprop(colors[c][0],colors[c][1],colors[c][2],   colors[c][0],colors[c][1],colors[c][2],    colors[c][0],colors[c][1],colors[c][2],    50);
 
 
-        glTranslatef(wallLen/2-d,1.4,1.5);
+        glTranslatef(wallLen/2-d,1.45,1.5);
         glRotated(90, 0, 1, 0);
         glScalef(3-d, 3, wallLen-d);
 
@@ -427,7 +557,6 @@ void drawsphere()
         glPopMatrix();
 
 }
-
 
 
 void oven()
@@ -600,17 +729,9 @@ void fan()
 void drawFan()
 {
 
-    glPushMatrix();//fan box
-        c=4;
-        matprop(colors[c][0],colors[c][1],colors[c][2],   colors[c][0],colors[c][1],colors[c][2],    colors[c][0],colors[c][1],colors[c][2],    50);
-
-        glTranslatef(17, 8, 0.25);
-        glScalef(2.5, 2.5, 0.6);
-        glutSolidCube(1.0);
-    glPopMatrix();
 
     glPushMatrix();
-        glTranslatef(17, 8, 0.6);
+        glTranslatef(17, 8, 0.4);
         glRotatef( theta,0, 0, 1.0 );
         fan();
     glPopMatrix();
@@ -740,6 +861,9 @@ void drawsnowman()
     snowman();
     glPopMatrix();
 }
+
+
+
 void drawkitchen()
 {
 
@@ -747,6 +871,7 @@ void drawkitchen()
 /**/
     drawsphere();
     drawboundary();
+    drawRigntWall();
     drawshelf();
     drawboxes();
     drawwindow();
@@ -756,7 +881,8 @@ void drawkitchen()
     drawFan();
     drawtable();
     drawkettle();
-    drawsnowman();/*
+    drawsnowman();
+    drawFloor();/*
     */
 
 }
@@ -837,22 +963,7 @@ void display(void)
      drawkitchen();
    // glTranslatef(2,2,2);
      //drawkitchen();
- /*
-    glPushMatrix();
-    glTranslatef(0,0,Tzval);
 
-    glRotatef( alpha,axis_x, axis_y, 0.0 );
-    glRotatef( theta, axis_x, axis_y, 0.0 );
-    drawkitchen();
-    glPopMatrix();
-*/
-   /*
-     glPushMatrix();
-        glTranslatef(0,0,Tzval);
-        glScalef(3,3,3);
-        glutSolidCube(1);
-    glPopMatrix();
-  */
     glFlush();
     glutSwapBuffers();
 }

@@ -902,3 +902,22 @@
 1526093416 c:\program files\codeblocks\mingw\x86_64-w64-mingw32\include\math.h
 	<crtdefs.h>
 
+1666669568 source:h:\drive h\code blocks programming\opengl programs\cse4208 computer graphics\lab assignment\main.cpp
+	<GL/gl.h>
+	<GL/glu.h>
+	<GL/glut.h>
+	<stdlib.h>
+	<stdio.h>
+	<windows.h>
+	<math.h>
+	<iostream>
+	"BmpLoader.h"
+
+1666540388 h:\drive h\code blocks programming\opengl programs\cse4208 computer graphics\lab assignment\bmploader.h
+	<windows.h>
+
+1666540520 source:h:\drive h\code blocks programming\opengl programs\cse4208 computer graphics\lab assignment\bmploader.cpp
+	"BmpLoader.h"
+	<stdio.h>
+	<iostream>
+
